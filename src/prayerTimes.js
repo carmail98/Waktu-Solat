@@ -98,6 +98,51 @@ function getPrayerTimesForDate(date, zone, csvFile) {
   return parseCsvForDate(csvContent, date);
 }
 
+// Parse JAKIM CSV for prayer times
+function parsePrayerTimesCsv(csvContent, targetDate) {
+  const lines = csvContent.trim().split(/\r?\n/);
+  const headers = lines[0].split(',').map(h => h.trim());
+  // Find date column index
+  const dateIdx = headers.findIndex(h => h.toLowerCase().includes('miladi'));
+  if (dateIdx === -1) return null;
+
+  // Format date as DD-MMM-YYYY (e.g., 01-Jan-2025)
+  function formatDate(d) {
+    const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
+  let dateStr = formatDate(targetDate);
+  let row = lines.find(line => line.split(',')[dateIdx].trim() === dateStr);
+  if (!row) {
+    // fallback to Jan 1, 2025
+    dateStr = '01-Jan-2025';
+    row = lines.find(line => line.split(',')[dateIdx].trim() === dateStr);
+  }
+  if (!row) return null;
+
+  const values = row.split(',').map(v => v.trim());
+  // Map CSV columns to prayer times
+  return {
+    fajr: values[headers.findIndex(h => h.toLowerCase() === 'subuh')],
+    syuruk: values[headers.findIndex(h => h.toLowerCase() === 'syuruk')],
+    dhuhr: values[headers.findIndex(h => h.toLowerCase() === 'zohor')],
+    asr: values[headers.findIndex(h => h.toLowerCase() === 'asar')],
+    maghrib: values[headers.findIndex(h => h.toLowerCase() === 'maghrib')],
+    isha: values[headers.findIndex(h => h.toLowerCase() === 'isyak')]
+  };
+}
+
+function getPrayerTimes(zone, date) {
+  const csvPath = path.join(__dirname, '../data', `${zone}.csv`);
+  if (!fs.existsSync(csvPath)) return null;
+  const csvContent = fs.readFileSync(csvPath, 'utf8');
+  return parsePrayerTimesCsv(csvContent, date);
+}
+
 module.exports = {
   loadData,
   getPrayerTimes,

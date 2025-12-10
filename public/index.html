@@ -306,67 +306,81 @@
     // Show loading skeleton
     document.getElementById('prayerList').innerHTML = '<div class="skeleton"></div>'.repeat(7);
 
-    // Add debug log for fetched data
-    async function loadPrayerTimes() {
+    // Helper: fetch prayer times for selected zone
+    async function fetchPrayerTimes(zone) {
       try {
-        const zone = document.getElementById('zoneSelector').value;
         const res = await fetch(`/api/prayer-times?zone=${zone}`);
         let data;
         if (!res.ok) {
-          // Try to parse error JSON, fallback to generic
           try {
             data = await res.json();
-            document.getElementById('prayerList').innerHTML = `<div style="text-align:center;color:#ef4444;">${data.error || 'Ralat memuatkan data'}</div>`;
+            showError(data.error || 'Ralat memuatkan data');
           } catch {
-            document.getElementById('prayerList').innerHTML = '<div style="text-align:center;color:#ef4444;">Ralat memuatkan data</div>';
+            showError('Ralat memuatkan data');
           }
-          return;
+          return null;
         }
         data = await res.json();
-        console.log('Fetched data:', data);
-
         if (!data || data.error) {
-          document.getElementById('prayerList').innerHTML = `<div style="text-align:center;color:#ef4444;">${data.error || 'Data tidak ditemui'}</div>`;
-          return;
+          showError(data.error || 'Data tidak ditemui');
+          return null;
         }
-
-        const prayerOrder = ['imsak', 'subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'];
-        let nextPrayer = null;
-        let nextTime = null;
-        const now = new Date();
-
-        const prayerItems = prayerOrder.map(prayer => {
-          const timeStr = data[prayer];
-          const timeMalay = formatTimeMalay(timeStr);
-          const prayerTime = parseTimeToToday(timeStr);
-          const isCurrent = now > prayerTime && (!nextPrayer || prayerTime > parseTimeToToday(data[nextPrayer?.toLowerCase()]));
-
-          // Find next upcoming prayer
-          if (!nextPrayer && prayerTime > now) {
-            nextPrayer = prayerNameMap[prayer];
-            nextTime = prayerTime;
-          }
-
-          return `
-            <div class="prayer-item">
-              <span class="prayer-name">${prayerNameMap[prayer]}</span>
-              <span class="prayer-time ${isCurrent ? 'now' : ''}">${timeMalay}</span>
-            </div>
-          `;
-        }).join('');
-
-        document.getElementById('prayerList').innerHTML = prayerItems;
-
-        if (nextPrayer) {
-          document.getElementById('nextPrayerName').textContent = nextPrayer;
-          updateCountdown(nextTime);
-        } else {
-          document.getElementById('nextPrayerName').textContent = 'Isyak';
-          document.getElementById('countdown').textContent = 'Sehingga esok';
-        }
+        return data;
       } catch (err) {
-        console.error(err);
-        document.getElementById('prayerList').innerHTML = '<div style="text-align:center;color:#ef4444;">Ralat memuatkan data</div>';
+        showError('Ralat memuatkan data');
+        return null;
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('prayerList').innerHTML = `<div style="text-align:center;color:#ef4444;">${msg}</div>`;
+    }
+
+    // Add debug log for fetched data
+    async function loadPrayerTimes() {
+      const zone = document.getElementById('zoneSelector').value;
+      const data = await fetchPrayerTimes(zone);
+      if (!data) return;
+
+      const prayerOrder = ['fajr', 'syuruk', 'dhuhr', 'asr', 'maghrib', 'isha'];
+      let nextPrayer = null;
+      let nextTime = null;
+      const now = new Date();
+
+      const prayerNameMap = {
+        fajr: 'Subuh',
+        syuruk: 'Syuruk',
+        dhuhr: 'Zohor',
+        asr: 'Asar',
+        maghrib: 'Maghrib',
+        isha: 'Isyak'
+      };
+
+      const prayerItems = prayerOrder.map(prayer => {
+        const timeStr = data[prayer];
+        const timeMalay = formatTimeMalay(timeStr);
+        const prayerTime = parseTimeToToday(timeStr);
+        const isCurrent = now > prayerTime && (!nextPrayer || prayerTime > parseTimeToToday(data[nextPrayer?.toLowerCase()]));
+        if (!nextPrayer && prayerTime > now) {
+          nextPrayer = prayerNameMap[prayer];
+          nextTime = prayerTime;
+        }
+        return `
+          <div class="prayer-item">
+            <span class="prayer-name">${prayerNameMap[prayer]}</span>
+            <span class="prayer-time ${isCurrent ? 'now' : ''}">${timeMalay}</span>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('prayerList').innerHTML = prayerItems;
+
+      if (nextPrayer) {
+        document.getElementById('nextPrayerName').textContent = nextPrayer;
+        updateCountdown(nextTime);
+      } else {
+        document.getElementById('nextPrayerName').textContent = 'Isyak';
+        document.getElementById('countdown').textContent = 'Sehingga esok';
       }
     }
 

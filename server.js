@@ -1,15 +1,15 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const { getPrayerTimesForDate } = require('./src/prayerTimes');
+const { getPrayerTimesForDate } = require('./src/prayerTimes.js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files from public/
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API endpoint for today's prayer times, with optional zone
+// API: Get prayer times for a zone
 app.get('/api/prayer-times', (req, res) => {
   const zone = req.query.zone || 'WLY01';
   const today = new Date();
@@ -50,5 +50,11 @@ app.get(/^\/(?!api).*/, (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Waktu Solat server running at http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+
+// Global error handler (catches unhandled errors)
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Internal server error" });
 });

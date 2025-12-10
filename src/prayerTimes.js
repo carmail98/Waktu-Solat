@@ -64,69 +64,38 @@ function parseDate(str) {
   return new Date(Number(year), months[monthStr], Number(day));
 }
 
-// getPrayerTimesForDate now accepts (targetDate, zone, csvFile)
-function getPrayerTimesForDate(targetDate, zone = 'WLY01', csvFile = null) {
-  let filePath;
-  if (csvFile) {
-    filePath = path.resolve(__dirname, '..', 'data', csvFile);
-    if (!fs.existsSync(filePath)) {
-      // fallback to default CSV if zone-specific file does not exist
-      filePath = path.resolve(__dirname, '..', 'data', 'jadual_waktu_solat_JAKIM_WLY_01_2025.csv');
-    }
-  } else {
-    filePath = path.resolve(__dirname, '..', 'data', 'jadual_waktu_solat_JAKIM_WLY_01_2025.csv');
-  }
-  if (!fs.existsSync(filePath)) {
-    throw new Error('CSV file not found: ' + filePath);
-  }
-  const csv = fs.readFileSync(filePath, 'utf8');
-  const lines = csv.trim().split('\n');
+function parseCsvForDate(csvContent, targetDate) {
+  const lines = csvContent.trim().split('\n');
   const headers = lines[0].split(',');
-  let found = null;
-  for (let i = 1; i < lines.length; i++) {
-    const row = lines[i].split(',');
-    const rowObj = {};
-    headers.forEach((h, idx) => rowObj[h.trim()] = row[idx] ? row[idx].trim() : '');
-    if ((rowObj['Tarikh Miladi'] || rowObj['date'])) {
-      const rowDate = parseDate(rowObj['Tarikh Miladi'] || rowObj['date']);
-      if (rowDate.toISOString().slice(0, 10) === targetDate.toISOString().slice(0, 10)) {
-        found = {
-          date: rowObj['Tarikh Miladi'] || rowObj['date'],
-          imsak: rowObj['Imsak'] || rowObj['imsak'],
-          subuh: rowObj['Subuh'] || rowObj['subuh'],
-          syuruk: rowObj['Syuruk'] || rowObj['syuruk'],
-          zohor: rowObj['Zohor'] || rowObj['zohor'],
-          asar: rowObj['Asar'] || rowObj['asar'],
-          maghrib: rowObj['Maghrib'] || rowObj['maghrib'],
-          isyak: rowObj['Isyak'] || rowObj['isyak']
-        };
-        break;
-      }
-    }
+  const dateIndex = headers.findIndex(h => h.trim() === 'Tarikh Miladi');
+  if (dateIndex === -1) throw new Error("CSV missing 'Tarikh Miladi' column");
+
+  // Find row for today's date, fallback to Jan 1, 2025 if not found
+  const todayStr = `${String(targetDate.getDate()).padStart(2, '0')}/${String(targetDate.getMonth()+1).padStart(2, '0')}/${targetDate.getFullYear()}`;
+  let row = lines.find(line => line.split(',')[dateIndex].trim() === todayStr);
+  if (!row) {
+    row = lines.find(line => line.split(',')[dateIndex].trim() === '01/01/2025');
   }
-  if (found) {
-    return found;
-  } else {
-    // fallback for dev: try 2025-01-01 if today is not found
-    const fallbackRow = lines.find(line => line.includes('01-Jan-2025'));
-    if (fallbackRow) {
-      const row = fallbackRow.split(',');
-      const rowObj = {};
-      headers.forEach((h, idx) => rowObj[h.trim()] = row[idx] ? row[idx].trim() : '');
-      return {
-        date: rowObj['Tarikh Miladi'] || rowObj['date'],
-        imsak: rowObj['Imsak'] || rowObj['imsak'],
-        subuh: rowObj['Subuh'] || rowObj['subuh'],
-        syuruk: rowObj['Syuruk'] || rowObj['syuruk'],
-        zohor: rowObj['Zohor'] || rowObj['zohor'],
-        asar: rowObj['Asar'] || rowObj['asar'],
-        maghrib: rowObj['Maghrib'] || rowObj['maghrib'],
-        isyak: rowObj['Isyak'] || rowObj['isyak']
-      };
-    } else {
-      return null;
-    }
-  }
+  if (!row) return null;
+
+  const values = row.split(',');
+  // Map CSV columns to prayer times
+  return {
+    imsak: values[headers.findIndex(h => h.trim().toLowerCase() === 'imsak')],
+    subuh: values[headers.findIndex(h => h.trim().toLowerCase() === 'subuh')],
+    syuruk: values[headers.findIndex(h => h.trim().toLowerCase() === 'syuruk')],
+    zohor: values[headers.findIndex(h => h.trim().toLowerCase() === 'zohor')],
+    asar: values[headers.findIndex(h => h.trim().toLowerCase() === 'asar')],
+    maghrib: values[headers.findIndex(h => h.trim().toLowerCase() === 'maghrib')],
+    isyak: values[headers.findIndex(h => h.trim().toLowerCase() === 'isyak')]
+  };
+}
+
+function getPrayerTimesForDate(date, zone, csvFile) {
+  const csvPath = `${__dirname}/../data/${csvFile}`;
+  if (!fs.existsSync(csvPath)) return null;
+  const csvContent = fs.readFileSync(csvPath, 'utf8');
+  return parseCsvForDate(csvContent, date);
 }
 
 module.exports = {

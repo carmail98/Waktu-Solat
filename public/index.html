@@ -1,95 +1,341 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="ms" class="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Waktu Solat Hari Ini</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Waktu Solat Malaysia</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <style>
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f6f8fa;
+    :root {
+      --bg: #ffffff;
+      --fg: #1f2937;
+      --card-bg: #f9fafb;
+      --accent: #3b82f6;
+      --accent-dark: #2563eb;
+      --border: #e5e7eb;
+      --success: #10b981;
+    }
+    .dark {
+      --bg: #0f172a;
+      --fg: #e2e8f0;
+      --card-bg: #1e293b;
+      --border: #334155;
+    }
+
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin: 20px 0 30px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .next-prayer {
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    .next-label {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+
+    .next-time {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .countdown {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-top: 4px;
+      color: var(--fg);
+    }
+
+    .prayer-list {
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
+      gap: 16px;
     }
-    .container {
-      max-width: 400px;
-      margin: 40px auto;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      padding: 2rem 1.5rem 1.5rem 1.5rem;
+
+    .prayer-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
     }
-    h1 {
-      text-align: center;
-      color: #1a237e;
-      margin-bottom: 1.5rem;
-      font-size: 1.5rem;
+
+    .prayer-item:last-child {
+      border-bottom: none;
     }
-    .prayer-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 1rem;
-    }
-    .prayer-table th, .prayer-table td {
-      padding: 0.5rem 0.7rem;
-      text-align: left;
-    }
-    .prayer-table th {
-      color: #3949ab;
+
+    .prayer-name {
       font-weight: 600;
-      background: #e8eaf6;
     }
-    .prayer-table tr:nth-child(even) {
-      background: #f4f6fc;
+
+    .prayer-time {
+      font-weight: 600;
+      color: var(--accent);
     }
-    .error {
-      color: #c62828;
+
+    .now {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .footer {
       text-align: center;
-      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-top: 20px;
     }
-    @media (max-width: 500px) {
-      .container { max-width: 98vw; padding: 1rem 0.5rem; }
-      h1 { font-size: 1.1rem; }
+
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--card-bg);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .theme-toggle:hover {
+      opacity: 0.9;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 0 16px;
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+      .card {
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Waktu Solat Hari Ini</h1>
-    <table class="prayer-table" id="prayer-table" style="display:none">
-      <tbody>
-        <tr><th>Imsak</th><td id="imsak"></td></tr>
-        <tr><th>Subuh</th><td id="subuh"></td></tr>
-        <tr><th>Syuruk</th><td id="syuruk"></td></tr>
-        <tr><th>Zohor</th><td id="zohor"></td></tr>
-        <tr><th>Asar</th><td id="asar"></td></tr>
-        <tr><th>Maghrib</th><td id="maghrib"></td></tr>
-        <tr><th>Isyak</th><td id="isyak"></td></tr>
-      </tbody>
-    </table>
-    <div class="error" id="error" style="display:none"></div>
+  <div class="theme-toggle" id="themeToggle">
+    🌙
   </div>
+
+  <div class="container">
+    <header>
+      <h1>Waktu Solat Hari Ini</h1>
+      <div class="subtitle" id="currentDate">Rabu, 10 Disember 2025</div>
+    </header>
+
+    <main>
+      <div class="card">
+        <div class="next-prayer">
+          <div class="next-label">SOLAT SETERUSNYA</div>
+          <div class="next-time" id="nextPrayerName">Zohor</div>
+          <div class="countdown" id="countdown">2 jam 15 minit</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="prayer-list" id="prayerList">
+          <!-- Prayer times will be inserted here -->
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      Data disediakan oleh JAKIM
+    </footer>
+  </div>
+
   <script>
-    fetch('/api/prayer-times')
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) throw new Error(data.error);
-        document.getElementById('imsak').textContent = data.imsak || '-';
-        document.getElementById('subuh').textContent = data.subuh || '-';
-        document.getElementById('syuruk').textContent = data.syuruk || '-';
-        document.getElementById('zohor').textContent = data.zohor || '-';
-        document.getElementById('asar').textContent = data.asar || '-';
-        document.getElementById('maghrib').textContent = data.maghrib || '-';
-        document.getElementById('isyak').textContent = data.isyak || '-';
-        document.getElementById('prayer-table').style.display = '';
-      })
-      .catch(err => {
-        document.getElementById('error').textContent = err.message || 'Ralat memuatkan data.';
-        document.getElementById('error').style.display = '';
-      });
+    // Malay day names
+    const days = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+    // Malay month names
+    const months = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+
+    // Format today's date for footer
+    const now = new Date();
+    const dayName = days[now.getDay()];
+    const date = now.getDate();
+    const monthName = months[now.getMonth()];
+    const year = now.getFullYear();
+    document.getElementById('currentDate').textContent = `${dayName}, ${date} ${monthName} ${year}`;
+
+    // Prayer name mapping (English → Malay)
+    const prayerNameMap = {
+      imsak: 'Imsak',
+      subuh: 'Subuh',
+      syuruk: 'Syuruk',
+      zohor: 'Zohor',
+      asar: 'Asar',
+      maghrib: 'Maghrib',
+      isyak: 'Isyak'
+    };
+
+    // Parse time string like "1:20 pm" → Date object for today
+    function parseTimeToToday(timeStr) {
+      const [time, period] = timeStr.trim().split(' ');
+      let [hour, minute] = time.split(':').map(Number);
+      if (period === 'pm' && hour !== 12) hour += 12;
+      if (period === 'am' && hour === 12) hour = 0;
+      const date = new Date();
+      date.setHours(hour, minute, 0, 0);
+      return date;
+    }
+
+    // Format time as "h:mm a" → "1:20 petang" (in Malay)
+    function formatTimeMalay(timeStr) {
+      return timeStr
+        .replace('am', 'pagi')
+        .replace('pm', 'petang');
+    }
+
+    // Update countdown every second
+    function updateCountdown(nextTime) {
+      const now = new Date();
+      let diff = nextTime - now;
+      if (diff <= 0) {
+        // If past, show "Sedang berlangsung"
+        document.getElementById('countdown').textContent = 'Sedang berlangsung';
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      let countdownText = '';
+      if (hours > 0) {
+        countdownText = `${hours} jam ${minutes} minit`;
+      } else {
+        countdownText = `${minutes} minit`;
+      }
+      document.getElementById('countdown').textContent = countdownText;
+
+      // Update again in 1 second
+      setTimeout(() => updateCountdown(nextTime), 1000);
+    }
+
+    // Hide or disable zone selector (keep structure for future)
+    document.getElementById('zoneSelector').style.display = 'none';
+
+    // Show loading skeleton
+    document.getElementById('prayerList').innerHTML = '<div class="skeleton"></div>'.repeat(7);
+
+    // Load and display prayer times
+    async function loadPrayerTimes() {
+      try {
+        const res = await fetch('/api/prayer-times');
+        const data = await res.json();
+
+        if (!data || data.error) {
+          document.getElementById('prayerList').innerHTML = '<div style="text-align:center;color:#ef4444;">Data tidak ditemui</div>';
+          return;
+        }
+
+        const prayerOrder = ['imsak', 'subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'];
+        let nextPrayer = null;
+        let nextTime = null;
+        const now = new Date();
+
+        const prayerItems = prayerOrder.map(prayer => {
+          const timeStr = data[prayer];
+          const timeMalay = formatTimeMalay(timeStr);
+          const prayerTime = parseTimeToToday(timeStr);
+          const isCurrent = now > prayerTime && (!nextPrayer || prayerTime > parseTimeToToday(data[nextPrayer?.toLowerCase()]));
+
+          // Find next upcoming prayer
+          if (!nextPrayer && prayerTime > now) {
+            nextPrayer = prayerNameMap[prayer];
+            nextTime = prayerTime;
+          }
+
+          return `
+            <div class="prayer-item">
+              <span class="prayer-name">${prayerNameMap[prayer]}</span>
+              <span class="prayer-time ${isCurrent ? 'now' : ''}">${timeMalay}</span>
+            </div>
+          `;
+        }).join('');
+
+        document.getElementById('prayerList').innerHTML = prayerItems;
+
+        if (nextPrayer) {
+          document.getElementById('nextPrayerName').textContent = nextPrayer;
+          updateCountdown(nextTime);
+        } else {
+          document.getElementById('nextPrayerName').textContent = 'Isyak';
+          document.getElementById('countdown').textContent = 'Sehingga esok';
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('prayerList').innerHTML = '<div style="text-align:center;color:#ef4444;">Ralat memuatkan data</div>';
+      }
+    }
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.className = savedTheme;
+    themeToggle.textContent = savedTheme === 'light' ? '🌙' : '☀️';
+
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.className;
+      const newTheme = current === 'light' ? 'dark' : 'light';
+      document.documentElement.className = newTheme;
+      localStorage.setItem('theme', newTheme);
+      themeToggle.textContent = newTheme === 'light' ? '🌙' : '☀️';
+    });
+
+    // Load on start
+    loadPrayerTimes();
   </script>
 </body>
 </html>

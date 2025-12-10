@@ -13,7 +13,16 @@ app.get('/api/prayer-times', (req, res) => {
   const today = new Date();
   const result = getPrayerTimesForDate(today);
   if (result) {
-    res.json(result);
+    // Return only the fields expected by the UI, with correct keys
+    res.json({
+      imsak: result.imsak,
+      subuh: result.subuh,
+      syuruk: result.syuruk,
+      zohor: result.zohor,
+      asar: result.asar,
+      maghrib: result.maghrib,
+      isyak: result.isyak
+    });
   } else {
     res.status(404).json({ error: 'Tiada data untuk tarikh ini.' });
   }

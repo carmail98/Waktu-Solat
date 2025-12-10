@@ -150,6 +150,15 @@
       opacity: 0.9;
     }
 
+    .zone-selector-wrapper {
+      margin-bottom: 16px;
+    }
+
+    .zone-label {
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
     @media (max-width: 480px) {
       .container {
         padding: 0 16px;
@@ -173,6 +182,13 @@
       <h1>Waktu Solat Hari Ini</h1>
       <div class="subtitle" id="currentDate">Rabu, 10 Disember 2025</div>
     </header>
+
+    <div id="zoneSelectorWrapper" class="zone-selector-wrapper">
+      <label for="zoneSelector" class="zone-label">Zon:</label>
+      <select id="zoneSelector" class="w-full" disabled title="Zon">
+        <option value="WLY01" selected>Kuala Lumpur, Putrajaya</option>
+      </select>
+    </div>
 
     <main>
       <div class="card">
@@ -263,17 +279,31 @@
       setTimeout(() => updateCountdown(nextTime), 1000);
     }
 
-    // Hide or disable zone selector (keep structure for future)
-    document.getElementById('zoneSelector').style.display = 'none';
+    // Show the zone selector (disabled for now)
+    document.getElementById('zoneSelectorWrapper').style.display = '';
+    document.getElementById('zoneSelector').disabled = true;
+
+    // Fetch zones and populate the zone selector
+    fetch('/data/zones.json')
+      .then(res => res.json())
+      .then(zones => {
+        const zoneSelector = document.getElementById('zoneSelector');
+        zoneSelector.innerHTML = Object.entries(zones).map(([code, info]) =>
+          `<option value="${code}">${info.state} – ${info.name}</option>`
+        ).join('');
+        // Enable selector if more than one zone
+        zoneSelector.disabled = Object.keys(zones).length <= 1;
+      });
 
     // Show loading skeleton
     document.getElementById('prayerList').innerHTML = '<div class="skeleton"></div>'.repeat(7);
 
-    // Load and display prayer times
+    // Add debug log for fetched data
     async function loadPrayerTimes() {
       try {
         const res = await fetch('/api/prayer-times');
         const data = await res.json();
+        console.log('Fetched data:', data);
 
         if (!data || data.error) {
           document.getElementById('prayerList').innerHTML = '<div style="text-align:center;color:#ef4444;">Data tidak ditemui</div>';
@@ -339,3 +369,4 @@
   </script>
 </body>
 </html>
+``` 

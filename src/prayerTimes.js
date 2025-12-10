@@ -58,8 +58,8 @@ function parseDate(str) {
   // Accepts '01-Jan-2025' and returns Date object
   const [day, monthStr, year] = str.split('-');
   const months = {
-    Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
-    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+    Jan: 0, Feb: 1, Mac: 2, Apr: 3, Mei: 4, Jun: 5,
+    Julai: 6, Ogos: 7, Sep: 8, Okt: 9, Nov: 10, Dis: 11
   };
   return new Date(Number(year), months[monthStr], Number(day));
 }
@@ -70,11 +70,19 @@ function parseCsvForDate(csvContent, targetDate) {
   const dateIndex = headers.findIndex(h => h.trim() === 'Tarikh Miladi');
   if (dateIndex === -1) throw new Error("CSV missing 'Tarikh Miladi' column");
 
-  // Find row for today's date, fallback to Jan 1, 2025 if not found
-  const todayStr = `${String(targetDate.getDate()).padStart(2, '0')}/${String(targetDate.getMonth()+1).padStart(2, '0')}/${targetDate.getFullYear()}`;
+  // Format date as DD-MMM-YYYY (e.g., 10-Dis-2025)
+  function formatDate(d) {
+    const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Julai','Ogos','Sep','Okt','Nov','Dis'];
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
+  let todayStr = formatDate(targetDate);
   let row = lines.find(line => line.split(',')[dateIndex].trim() === todayStr);
   if (!row) {
-    row = lines.find(line => line.split(',')[dateIndex].trim() === '01/01/2025');
+    row = lines.find(line => line.split(',')[dateIndex].trim() === '01-Jan-2025');
   }
   if (!row) return null;
 
@@ -106,11 +114,13 @@ function parsePrayerTimesCsv(csvContent, targetDate) {
   const dateIdx = headers.findIndex(h => h.toLowerCase().includes('miladi'));
   if (dateIdx === -1) return null;
 
-  // Format date as DD-MMM-YYYY (e.g., 01-Jan-2025)
+  // Format date as DD-MMM-YYYY (e.g., 10-Dec-2025)
   function formatDate(d) {
-    const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
+    const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Julai','Ogos','Sep','Okt','Nov','Dis','Dec'];
     const day = String(d.getDate()).padStart(2, '0');
-    const month = months[d.getMonth()];
+    // JAKIM uses 'Dis' for December, not 'Dec'
+    let month = months[d.getMonth()];
+    if (d.getMonth() === 11) month = 'Dis';
     const year = d.getFullYear();
     return `${day}-${month}-${year}`;
   }

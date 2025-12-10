@@ -10,18 +10,40 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 
 // API: Get prayer times for a zone
+// Fix: Use correct CSV filename pattern for JAKIM files
 app.get('/api/prayer-times', (req, res) => {
   const zone = req.query.zone;
   if (!zone) {
     return res.status(400).json({ error: 'Zone is required' });
   }
-  let date = new Date();
-  // For testing, fallback to Jan 1, 2025 if not found
-  const prayerTimes = require('./src/prayerTimes').getPrayerTimes(zone, date);
-  if (!prayerTimes) {
-    return res.status(404).json({ error: 'Zone not found or no data for date' });
+  const today = new Date();
+  // JAKIM CSV filename pattern
+  const csvFile = `jadual_waktu_solat_JAKIM_${zone}_2025.csv`;
+  const csvPath = path.join(__dirname, 'data', csvFile);
+
+  if (!fs.existsSync(csvPath)) {
+    return res.status(404).json({ error: `Zone data not found for ${zone}` });
   }
-  res.json(prayerTimes);
+
+  try {
+    const result = getPrayerTimesForDate(today, zone, csvFile);
+    if (result) {
+      // Map to required keys
+      res.json({
+        fajr: result.subuh,
+        syuruk: result.syuruk,
+        dhuhr: result.zohor,
+        asr: result.asar,
+        maghrib: result.maghrib,
+        isha: result.isyak
+      });
+    } else {
+      res.status(404).json({ error: 'Tiada data untuk tarikh ini.' });
+    }
+  } catch (e) {
+    console.error('Server error:', e);
+    res.status(500).json({ error: 'Ralat membaca fail CSV zon.' });
+  }
 });
 
 // Serve index.html for all other GET requests (not starting with /api)

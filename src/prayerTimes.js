@@ -92,10 +92,10 @@ function parseCsvForDate(csvContent, targetDate) {
 }
 
 function getPrayerTimesForDate(date, zone, csvFile) {
-  const csvPath = `${__dirname}/../data/${csvFile}`;
+  const csvPath = path.join(__dirname, '../data', csvFile);
   if (!fs.existsSync(csvPath)) return null;
   const csvContent = fs.readFileSync(csvPath, 'utf8');
-  return parseCsvForDate(csvContent, date);
+  return parsePrayerTimesCsv(csvContent, date);
 }
 
 // Parse JAKIM CSV for prayer times
@@ -120,19 +120,20 @@ function parsePrayerTimesCsv(csvContent, targetDate) {
   if (!row) {
     // fallback to Jan 1, 2025
     dateStr = '01-Jan-2025';
-    row = lines.find(line => line.split(',')[dateIdx].trim() === dateStr);
+    row = lines.find(line.split(',')[dateIdx].trim() === dateStr);
   }
   if (!row) return null;
 
   const values = row.split(',').map(v => v.trim());
   // Map CSV columns to prayer times
   return {
-    fajr: values[headers.findIndex(h => h.toLowerCase() === 'subuh')],
+    imsak: values[headers.findIndex(h => h.toLowerCase() === 'imsak')],
+    subuh: values[headers.findIndex(h => h.toLowerCase() === 'subuh')],
     syuruk: values[headers.findIndex(h => h.toLowerCase() === 'syuruk')],
-    dhuhr: values[headers.findIndex(h => h.toLowerCase() === 'zohor')],
-    asr: values[headers.findIndex(h => h.toLowerCase() === 'asar')],
+    zohor: values[headers.findIndex(h => h.toLowerCase() === 'zohor')],
+    asar: values[headers.findIndex(h => h.toLowerCase() === 'asar')],
     maghrib: values[headers.findIndex(h => h.toLowerCase() === 'maghrib')],
-    isha: values[headers.findIndex(h => h.toLowerCase() === 'isyak')]
+    isyak: values[headers.findIndex(h => h.toLowerCase() === 'isyak')]
   };
 }
 

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waktu Solat Hari Ini</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f6f8fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 400px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 2rem 1.5rem 1.5rem 1.5rem;
+    }
+    h1 {
+      text-align: center;
+      color: #1a237e;
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+    }
+    .prayer-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    .prayer-table th, .prayer-table td {
+      padding: 0.5rem 0.7rem;
+      text-align: left;
+    }
+    .prayer-table th {
+      color: #3949ab;
+      font-weight: 600;
+      background: #e8eaf6;
+    }
+    .prayer-table tr:nth-child(even) {
+      background: #f4f6fc;
+    }
+    .error {
+      color: #c62828;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    @media (max-width: 500px) {
+      .container { max-width: 98vw; padding: 1rem 0.5rem; }
+      h1 { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Waktu Solat Hari Ini</h1>
+    <table class="prayer-table" id="prayer-table" style="display:none">
+      <tbody>
+        <tr><th>Imsak</th><td id="imsak"></td></tr>
+        <tr><th>Subuh</th><td id="subuh"></td></tr>
+        <tr><th>Syuruk</th><td id="syuruk"></td></tr>
+        <tr><th>Zohor</th><td id="zohor"></td></tr>
+        <tr><th>Asar</th><td id="asar"></td></tr>
+        <tr><th>Maghrib</th><td id="maghrib"></td></tr>
+        <tr><th>Isyak</th><td id="isyak"></td></tr>
+      </tbody>
+    </table>
+    <div class="error" id="error" style="display:none"></div>
+  </div>
+  <script>
+    fetch('/api/prayer-times')
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        document.getElementById('imsak').textContent = data.imsak || '-';
+        document.getElementById('subuh').textContent = data.subuh || '-';
+        document.getElementById('syuruk').textContent = data.syuruk || '-';
+        document.getElementById('zohor').textContent = data.zohor || '-';
+        document.getElementById('asar').textContent = data.asar || '-';
+        document.getElementById('maghrib').textContent = data.maghrib || '-';
+        document.getElementById('isyak').textContent = data.isyak || '-';
+        document.getElementById('prayer-table').style.display = '';
+      })
+      .catch(err => {
+        document.getElementById('error').textContent = err.message || 'Ralat memuatkan data.';
+        document.getElementById('error').style.display = '';
+      });
+  </script>
+</body>
+</html>

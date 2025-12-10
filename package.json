@@ -4,13 +4,14 @@
   "description": "Manage prayer times from JAKIM CSV schedule",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "test": "echo \"No tests configured\" && exit 0"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
     "csv-parser": "^3.0.0",
-    "dayjs": "^1.11.0"
+    "dayjs": "^1.11.0",
+    "express": "^5.2.1"
   }
 }

@@ -64,8 +64,20 @@ function parseDate(str) {
   return new Date(Number(year), months[monthStr], Number(day));
 }
 
-function getPrayerTimesForDate(targetDate) {
-  const csv = fs.readFileSync(DATA_PATH, 'utf8');
+// getPrayerTimesForDate now accepts (targetDate, zone, csvFile)
+function getPrayerTimesForDate(targetDate, zone = 'WLY01', csvFile = null) {
+  // Use the correct CSV file for the zone if provided
+  let filePath;
+  if (csvFile) {
+    filePath = path.resolve(__dirname, '..', 'data', csvFile);
+    if (!fs.existsSync(filePath)) {
+      // fallback to default CSV if zone-specific file does not exist
+      filePath = DATA_PATH;
+    }
+  } else {
+    filePath = DATA_PATH;
+  }
+  const csv = fs.readFileSync(filePath, 'utf8');
   const lines = csv.trim().split('\n');
   const headers = lines[0].split(',');
   let found = null;
@@ -73,19 +85,18 @@ function getPrayerTimesForDate(targetDate) {
     const row = lines[i].split(',');
     const rowObj = {};
     headers.forEach((h, idx) => rowObj[h.trim()] = row[idx] ? row[idx].trim() : '');
-    if (rowObj['Tarikh Miladi']) {
-      const rowDate = parseDate(rowObj['Tarikh Miladi']);
-      // Compare only the date part (YYYY-MM-DD)
+    if ((rowObj['Tarikh Miladi'] || rowObj['date'])) {
+      const rowDate = parseDate(rowObj['Tarikh Miladi'] || rowObj['date']);
       if (rowDate.toISOString().slice(0, 10) === targetDate.toISOString().slice(0, 10)) {
         found = {
-          date: rowObj['Tarikh Miladi'],
-          imsak: rowObj['Imsak'],
-          subuh: rowObj['Subuh'],
-          syuruk: rowObj['Syuruk'],
-          zohor: rowObj['Zohor'],
-          asar: rowObj['Asar'],
-          maghrib: rowObj['Maghrib'],
-          isyak: rowObj['Isyak']
+          date: rowObj['Tarikh Miladi'] || rowObj['date'],
+          imsak: rowObj['Imsak'] || rowObj['imsak'],
+          subuh: rowObj['Subuh'] || rowObj['subuh'],
+          syuruk: rowObj['Syuruk'] || rowObj['syuruk'],
+          zohor: rowObj['Zohor'] || rowObj['zohor'],
+          asar: rowObj['Asar'] || rowObj['asar'],
+          maghrib: rowObj['Maghrib'] || rowObj['maghrib'],
+          isyak: rowObj['Isyak'] || rowObj['isyak']
         };
         break;
       }
@@ -95,25 +106,22 @@ function getPrayerTimesForDate(targetDate) {
     return found;
   } else {
     // fallback for dev: try 2025-01-01 if today is not found
-    const fallback = '2025-01-01';
     const fallbackRow = lines.find(line => line.includes('01-Jan-2025'));
     if (fallbackRow) {
       const row = fallbackRow.split(',');
       const rowObj = {};
       headers.forEach((h, idx) => rowObj[h.trim()] = row[idx] ? row[idx].trim() : '');
-      console.log(`Date ${targetDate.toISOString().slice(0, 10)} not found in dataset. Showing fallback for 2025-01-01.`);
       return {
-        date: rowObj['Tarikh Miladi'],
-        imsak: rowObj['Imsak'],
-        subuh: rowObj['Subuh'],
-        syuruk: rowObj['Syuruk'],
-        zohor: rowObj['Zohor'],
-        asar: rowObj['Asar'],
-        maghrib: rowObj['Maghrib'],
-        isyak: rowObj['Isyak']
+        date: rowObj['Tarikh Miladi'] || rowObj['date'],
+        imsak: rowObj['Imsak'] || rowObj['imsak'],
+        subuh: rowObj['Subuh'] || rowObj['subuh'],
+        syuruk: rowObj['Syuruk'] || rowObj['syuruk'],
+        zohor: rowObj['Zohor'] || rowObj['zohor'],
+        asar: rowObj['Asar'] || rowObj['asar'],
+        maghrib: rowObj['Maghrib'] || rowObj['maghrib'],
+        isyak: rowObj['Isyak'] || rowObj['isyak']
       };
     } else {
-      console.log(`Date ${targetDate.toISOString().slice(0, 10)} not found in dataset.`);
       return null;
     }
   }

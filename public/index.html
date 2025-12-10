@@ -281,7 +281,6 @@
 
     // Show the zone selector (disabled for now)
     document.getElementById('zoneSelectorWrapper').style.display = '';
-    document.getElementById('zoneSelector').disabled = true;
 
     // Fetch zones and populate the zone selector
     fetch('/data/zones.json')
@@ -292,8 +291,17 @@
           `<option value="${code}">${info.state} – ${info.name}</option>`
         ).join('');
         // Enable selector if more than one zone
-        zoneSelector.disabled = Object.keys(zones).length <= 1;
+        zoneSelector.disabled = Object.keys(zones).length <= 1 ? true : false;
+        // Set from localStorage if available
+        const savedZone = localStorage.getItem('zone') || 'WLY01';
+        zoneSelector.value = savedZone;
       });
+
+    // Listen for zone change and reload prayer times
+    document.getElementById('zoneSelector').addEventListener('change', e => {
+      localStorage.setItem('zone', e.target.value);
+      loadPrayerTimes();
+    });
 
     // Show loading skeleton
     document.getElementById('prayerList').innerHTML = '<div class="skeleton"></div>'.repeat(7);
@@ -301,7 +309,8 @@
     // Add debug log for fetched data
     async function loadPrayerTimes() {
       try {
-        const res = await fetch('/api/prayer-times');
+        const zone = document.getElementById('zoneSelector').value;
+        const res = await fetch(`/api/prayer-times?zone=${zone}`);
         const data = await res.json();
         console.log('Fetched data:', data);
 
@@ -369,4 +378,3 @@
   </script>
 </body>
 </html>
-``` 

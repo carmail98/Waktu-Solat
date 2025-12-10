@@ -66,16 +66,18 @@ function parseDate(str) {
 
 // getPrayerTimesForDate now accepts (targetDate, zone, csvFile)
 function getPrayerTimesForDate(targetDate, zone = 'WLY01', csvFile = null) {
-  // Use the correct CSV file for the zone if provided
   let filePath;
   if (csvFile) {
     filePath = path.resolve(__dirname, '..', 'data', csvFile);
     if (!fs.existsSync(filePath)) {
       // fallback to default CSV if zone-specific file does not exist
-      filePath = DATA_PATH;
+      filePath = path.resolve(__dirname, '..', 'data', 'jadual_waktu_solat_JAKIM_WLY_01_2025.csv');
     }
   } else {
-    filePath = DATA_PATH;
+    filePath = path.resolve(__dirname, '..', 'data', 'jadual_waktu_solat_JAKIM_WLY_01_2025.csv');
+  }
+  if (!fs.existsSync(filePath)) {
+    throw new Error('CSV file not found: ' + filePath);
   }
   const csv = fs.readFileSync(filePath, 'utf8');
   const lines = csv.trim().split('\n');

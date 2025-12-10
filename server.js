@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { getPrayerTimesForDate } = require('./src/prayerTimes');
 
 const app = express();
@@ -10,14 +11,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // API endpoint for today's prayer times, with optional zone
 app.get('/api/prayer-times', (req, res) => {
-  const today = new Date();
-  // Get zone from query param, default to WLY01
   const zone = req.query.zone || 'WLY01';
-  // Map zone to CSV file (e.g., jadual_waktu_solat_JAKIM_WLY_01_2025.csv)
+  const today = new Date();
+  // Compose the expected CSV filename for the zone
   const csvFile = `jadual_waktu_solat_JAKIM_${zone}_2025.csv`;
+  const csvPath = path.join(__dirname, 'data', csvFile);
+
+  if (!fs.existsSync(csvPath)) {
+    return res.status(404).json({ error: `Zone data not found for ${zone}` });
+  }
+
   try {
     const result = getPrayerTimesForDate(today, zone, csvFile);
     if (result) {
+      // Debug log for server
+      console.log("Sending data for zone", zone, ":", result);
       res.json({
         imsak: result.imsak,
         subuh: result.subuh,
@@ -31,6 +39,7 @@ app.get('/api/prayer-times', (req, res) => {
       res.status(404).json({ error: 'Tiada data untuk tarikh ini.' });
     }
   } catch (e) {
+    console.error('Server error:', e);
     res.status(500).json({ error: 'Ralat membaca fail CSV zon.' });
   }
 });

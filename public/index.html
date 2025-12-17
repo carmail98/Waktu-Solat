@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waktu Solat Malaysia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white rounded-xl shadow p-6">
+    <h1 class="text-2xl font-bold mb-2 text-center">Waktu Solat Malaysia</h1>
+    <div class="mb-4">
+      <label for="zone" class="block font-medium mb-1">Zon:</label>
+      <select id="zone" class="w-full border rounded p-2">
+        <option value="WLY01">Wilayah Persekutuan (Kuala Lumpur, Putrajaya)</option>
+        <option value="PGH_02">Pahang (Kuantan, Pekan, Rompin, Muadzam Shah)</option>
+      </select>
+    </div>
+    <div id="error" class="text-red-500 text-center mb-2 hidden"></div>
+    <div id="prayerTimes" class="space-y-2"></div>
+    <div id="nextPrayer" class="mt-4 text-center font-semibold"></div>
+    <div id="countdown" class="text-center text-blue-600 font-bold"></div>
+  </div>
+  <script>
+    const prayerNames = {
+      subuh: 'Subuh',
+      syuruk: 'Syuruk',
+      zohor: 'Zohor',
+      asar: 'Asar',
+      maghrib: 'Maghrib',
+      isyak: 'Isyak'
+    };
+    let countdownTimer;
+    async function fetchPrayerTimes() {
+      document.getElementById('error').classList.add('hidden');
+      document.getElementById('prayerTimes').innerHTML = '<div class="text-center">Memuatkan...</div>';
+      document.getElementById('nextPrayer').textContent = '';
+      document.getElementById('countdown').textContent = '';
+      clearTimeout(countdownTimer);
+      const zone = document.getElementById('zone').value;
+      try {
+        const res = await fetch(`/api/prayer-times?zone=${zone}`);
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Ralat tidak diketahui');
+        }
+        const data = await res.json();
+        renderPrayerTimes(data);
+      } catch (e) {
+        document.getElementById('prayerTimes').innerHTML = '';
+        document.getElementById('error').textContent = e.message;
+        document.getElementById('error').classList.remove('hidden');
+      }
+    }
+    function renderPrayerTimes(times) {
+      const now = new Date('2025-01-01T00:00:00'); // For testing
+      const prayerOrder = ['subuh','syuruk','zohor','asar','maghrib','isyak'];
+      let next = null, nextTime = null;
+      const items = prayerOrder.map(prayer => {
+        const t = times[prayer];
+        const d = parseTimeToToday(t, now);
+        if (!next && d > now) {
+          next = prayer;
+          nextTime = d;
+        }
+        return `<div class="flex justify-between"><span>${prayerNames[prayer]}</span><span>${t}</span></div>`;
+      }).join('');
+      document.getElementById('prayerTimes').innerHTML = items;
+      if (next) {
+        document.getElementById('nextPrayer').textContent = `Solat seterusnya: ${prayerNames[next]}`;
+        updateCountdown(nextTime);
+      } else {
+        document.getElementById('nextPrayer').textContent = 'Hari ini telah berakhir.';
+      }
+    }
+    function parseTimeToToday(timeStr, baseDate) {
+      // e.g. '5:57 am' => Date object on baseDate
+      const [hm, ap] = timeStr.split(' ');
+      let [h, m] = hm.split(':').map(Number);
+      if (ap === 'pm' && h !== 12) h += 12;
+      if (ap === 'am' && h === 12) h = 0;
+      const d = new Date(baseDate);
+      d.setHours(h, m, 0, 0);
+      return d;
+    }
+    function updateCountdown(target) {
+      const now = new Date();
+      let diff = (target - now) / 1000;
+      if (diff <= 0) {
+        document.getElementById('countdown').textContent = 'Sedang berlangsung';
+        return;
+      }
+      const h = Math.floor(diff / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const s = Math.floor(diff % 60);
+      document.getElementById('countdown').textContent = `Baki: ${h} jam ${m} minit ${s} saat`;
+      countdownTimer = setTimeout(() => updateCountdown(target), 1000);
+    }
+    document.getElementById('zone').addEventListener('change', fetchPrayerTimes);
+    fetchPrayerTimes();
+  </script>
+</body>
+</html>
